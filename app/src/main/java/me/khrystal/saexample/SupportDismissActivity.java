@@ -41,76 +41,78 @@ public class SupportDismissActivity extends AppCompatActivity implements View.On
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        // Get finger position on screen
-        final  int y = (int) event.getRawY();
+        if (canDismiss) {
+            // Get finger position on screen
+            final int y = (int) event.getRawY();
 
-        // switch on motion event type
-        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+            // switch on motion event type
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
 
-            case MotionEvent.ACTION_DOWN:
-                // save default base layout height
-                defaultViewHeight = baseLayout.getHeight();
+                case MotionEvent.ACTION_DOWN:
+                    // save default base layout height
+                    defaultViewHeight = baseLayout.getHeight();
 
-                // init finger and view position
-                previousFingerPosition = y;
-                baseLayoutPosition = (int) baseLayout.getY();
-                break;
+                    // init finger and view position
+                    previousFingerPosition = y;
+                    baseLayoutPosition = (int) baseLayout.getY();
+                    break;
 
-            case MotionEvent.ACTION_UP:
-                // if user was doing a scroll up
-                if (isScrollingUp) {
-                    // reset baselayout position
-                    baseLayout.setY(0);
-                    isScrollingUp = false;
-                }
+                case MotionEvent.ACTION_UP:
+                    // if user was doing a scroll up
+                    if (isScrollingUp) {
+                        // reset baselayout position
+                        baseLayout.setY(0);
+                        isScrollingUp = false;
+                    }
 
-                if (isScrollingDown) {
-                    baseLayout.setY(0);
-                    baseLayout.getLayoutParams().height = defaultViewHeight;
-                    baseLayout.requestLayout();
-                    isScrollingDown = false;
-                }
-                break;
+                    if (isScrollingDown) {
+                        baseLayout.setY(0);
+                        baseLayout.getLayoutParams().height = defaultViewHeight;
+                        baseLayout.requestLayout();
+                        isScrollingDown = false;
+                    }
+                    break;
 
-            case MotionEvent.ACTION_MOVE:
-                if (!isClosing) {
-                    int currentYPosition = (int) baseLayout.getY();
+                case MotionEvent.ACTION_MOVE:
+                    if (!isClosing) {
+                        int currentYPosition = (int) baseLayout.getY();
 
-                    if (previousFingerPosition > y) {
-                        if (!isScrollingUp)
-                            isScrollingUp = true;
+                        if (previousFingerPosition > y) {
+                            if (!isScrollingUp)
+                                isScrollingUp = true;
 
-                        if (baseLayout.getHeight() < defaultViewHeight) {
-                            baseLayout.getLayoutParams().height = baseLayout.getHeight();
-                            baseLayout.requestLayout();
+                            if (baseLayout.getHeight() < defaultViewHeight) {
+                                baseLayout.getLayoutParams().height = baseLayout.getHeight();
+                                baseLayout.requestLayout();
+                            } else {
+                                // action dismiss
+                                if ((baseLayoutPosition - currentYPosition) > defaultViewHeight / 4) {
+                                    closeUpAndDismissActivity(currentYPosition);
+                                    return true;
+                                }
+                            }
+                            baseLayout.setY(baseLayout.getY() + (y - previousFingerPosition));
                         } else {
-                            // action dismiss
-                            if ((baseLayoutPosition - currentYPosition) > defaultViewHeight / 4) {
-                                closeUpAndDismissActivity(currentYPosition);
+                            if (!isScrollingDown) {
+                                isScrollingDown = true;
+                            }
+
+                            if (Math.abs(baseLayoutPosition - currentYPosition) > defaultViewHeight / 2) {
+                                closeDownAndDismissActivity(currentYPosition);
                                 return true;
                             }
+                            baseLayout.getLayoutParams().height = baseLayout.getHeight();
+                            baseLayout.setY(baseLayout.getY() + (y - previousFingerPosition));
+                            baseLayout.requestLayout();
                         }
-                        baseLayout.setY(baseLayout.getY() + (y - previousFingerPosition));
-                    } else {
-                        if (!isScrollingDown) {
-                            isScrollingDown = true;
-                        }
-
-                        if (Math.abs(baseLayoutPosition - currentYPosition) > defaultViewHeight / 2) {
-                            closeDownAndDismissActivity(currentYPosition);
-                            return true;
-                        }
-                        baseLayout.getLayoutParams().height = baseLayout.getHeight();
-                        baseLayout.setY(baseLayout.getY() + (y - previousFingerPosition));
-                        baseLayout.requestLayout();
+                        // update position
+                        previousFingerPosition = y;
                     }
-                    // update position
-                    previousFingerPosition = y;
-                }
-                break;
-
-        }
-        return true;
+                    break;
+            }
+            return true;
+        } else
+            return false;
     }
 
     public void closeUpAndDismissActivity(int currentPosition) {
